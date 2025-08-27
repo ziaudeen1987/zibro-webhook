@@ -1,0 +1,33 @@
+//@version=5
+strategy("Zibro Intraday Signals", overlay=true, margin_long=100, margin_short=100)
+
+emaFast = input.int(9, "Fast EMA")
+emaSlow = input.int(21, "Slow EMA")
+takeProfitPips = input.float(10.0, "Take Profit (pips)")
+stopLossPips  = input.float(5.0, "Stop Loss (pips)")
+
+fastEMA = ta.ema(close, emaFast)
+slowEMA = ta.ema(close, emaSlow)
+
+longCond  = ta.crossover(fastEMA, slowEMA)
+shortCond = ta.crossunder(fastEMA, slowEMA)
+
+if (longCond)
+    strategy.entry("BUY", strategy.long)
+if (shortCond)
+    strategy.entry("SELL", strategy.short)
+
+pip = syminfo.mintick * 10
+longTP  = strategy.position_avg_price + takeProfitPips * pip
+longSL  = strategy.position_avg_price - stopLossPips * pip
+shortTP = strategy.position_avg_price - takeProfitPips * pip
+shortSL = strategy.position_avg_price + stopLossPips * pip
+
+strategy.exit("Exit Long", from_entry="BUY", limit=longTP, stop=longSL)
+strategy.exit("Exit Short", from_entry="SELL", limit=shortTP, stop=shortSL)
+
+plotshape(longCond,  title="BUY",  style=shape.triangleup,   color=color.green, size=size.large, location=location.belowbar, text="BUY")
+plotshape(shortCond, title="SELL", style=shape.triangledown, color=color.red,   size=size.large, location=location.abovebar, text="SELL")
+
+alertcondition(longCond,  title="Zibro BUY",  message="Zibro Signal 🚀 BUY {{ticker}} @ {{close}}")
+alertcondition(shortCond, title="Zibro SELL", message="Zibro Signal 🔻 SELL {{ticker}} @ {{close}}")
